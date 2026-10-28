@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-grain-cards>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMU 3D Viewer &middot; Oliver Stubbs</title>
+  <meta name="description" content="What it is A Raspberry Pi Pico with an ICM20948 reads nine axes of accelerometer, gyroscope and magnetometer data, fuses them into an orientation on...">
+
+  <meta property="og:site_name" content="Oliver Stubbs">
+  <meta property="og:title" content="IMU 3D Viewer &middot; Oliver Stubbs">
+  <meta property="og:description" content="What it is A Raspberry Pi Pico with an ICM20948 reads nine axes of accelerometer, gyroscope and magnetometer data, fuses them into an orientation on...">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oliver.stubbs.me.uk/work/imu-viewer">
+
+  <meta property="og:image" content="https://oliver.stubbs.me.uk/images/record.png">
+  <meta property="og:image:alt" content="A hand-drawn record">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://oliver.stubbs.me.uk/images/record.png">
+  <link rel="canonical" href="https://oliver.stubbs.me.uk/work/imu-viewer">
+
+  <script>
+    try {
+      var t = localStorage.getItem("theme");
+      if (t) document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+
+  <link rel="stylesheet" href="https://oliver.stubbs.me.uk/theme/css/style.css">
+  <link rel="icon" type="image/png" href="https://oliver.stubbs.me.uk/images/record.png">
+  <link rel="apple-touch-icon" href="https://oliver.stubbs.me.uk/images/record.png">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav__in">
+    <a class="nav__home" href="https://oliver.stubbs.me.uk/">Oliver Stubbs</a>
+    <nav class="nav__links">
+      <a href="https://oliver.stubbs.me.uk/work/" aria-current="page">Work</a>
+      <a href="https://oliver.stubbs.me.uk/about/" >About</a>
+    </nav>
+    <button class="toggle" type="button" id="theme-toggle" aria-label="Switch between light and dark">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+      </svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<article class="wrap article">
+  <a class="back" href="https://oliver.stubbs.me.uk/work/">&larr; Work</a>
+
+  <header class="article__head">
+    <h1 class="article__title">IMU 3D Viewer</h1>
+<p class="card__context">Personal project</p>    <ul class="tags" style="margin-top: var(--s-2)"><li>Python</li><li>MQTT</li><li>MicroPython</li><li>NumPy</li></ul>
+  </header>
+
+  <div class="article__body"><h2>What it is</h2>
+<p>A Raspberry Pi Pico with an ICM20948 reads nine axes of accelerometer, gyroscope and magnetometer data, fuses them into an orientation on the board itself, and publishes over MQTT at 100 Hz. A Python viewer draws a 3D box that turns with the board in real time, alongside its other readings: temperature, pressure, humidity, luminosity, UV and a VOC index.</p>
+<h2>What I built</h2>
+<p><strong>Firmware.</strong> MicroPython on the Pico. A complementary AHRS filter fuses all nine axes into a quaternion on the microcontroller, so the laptop receives an answer rather than raw axes.</p>
+<p><strong>Transport.</strong> MQTT, so the board and the viewer know nothing about each other and the Pico is not tethered to the machine.</p>
+<p><strong>Two viewers.</strong> One takes roll, pitch and yaw and composes three rotation matrices. The other takes a quaternion and builds a single matrix from it directly.</p>
+<p><strong>Magnetometer calibration.</strong> Nearby metal pulls the readings off-centre and magnetic fields stretch them out of round, corrected with an offset and a matrix, with 2D and 3D plots to check it. It matters because yaw rests entirely on the magnetometer: the other two sensors cannot tell you which way is north.</p>
+<h2>What I learned</h2>
+<p>My first version fused nine axes into a quaternion on the Pico, turned that into roll, pitch and yaw, sent the three angles over MQTT, and rebuilt a rotation from them in the viewer. The filter had already produced the quaternion I needed, so I was converting it into something lossier and then trying to put it back together at the other end. Switching the viewer to quaternions did not make it cleverer, it removed a step I had added myself.</p>
+<p>The three-angle viewer has to build its rotation from three separate matrices, one per axis. That is where gimbal lock comes from. Tip the board up near vertical and roll and yaw end up turning it around the same axis. Two of my three angles are doing the same job at that point, and the box on screen stops matching the board. Multiplying the matrices in a different order does not help. The quaternion viewer makes one matrix and never has the problem.</p>
+<p>I send the whole orientation in every message rather than a change to it, so when a packet goes missing over wifi the viewer skips a frame and carries on. If I had sent gyroscope readings for the laptop to add up instead, one lost packet would have fully messed up the orientation, which would have only worsened as time went on.</p>
+<p>I plotted the magnetometer readings as a point cloud to check the calibration, which made the problem obvious: they sat off-centre and squashed, then snapped back into a sphere once I corrected them. Reading the raw numbers never showed me that.</p>
+<h2>What it does not do yet</h2>
+<ul>
+<li>The firmware lives in a separate repository, so neither one is the whole project on its own</li>
+<li>No tests</li>
+</ul></div>
+</article>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>&copy; 2026 Oliver Stubbs</p>
+    <nav>
+      <a href="mailto:oliversestubbs+site@gmail.com">Email</a>
+      <a href="https://github.com/oliverstubbs" rel="me noopener" target="_blank">GitHub</a>
+      <a href="https://www.linkedin.com/in/oliversestubbs" rel="me noopener" target="_blank">LinkedIn</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    var root = document.documentElement;
+    function sync() {
+      var dark = root.dataset.theme
+        ? root.dataset.theme === "dark"
+        : matchMedia("(prefers-color-scheme: dark)").matches;
+      btn.toggleAttribute("data-dark", dark);
+    }
+    btn.addEventListener("click", function () {
+      var dark = root.dataset.theme
+        ? root.dataset.theme === "dark"
+        : matchMedia("(prefers-color-scheme: dark)").matches;
+      root.dataset.theme = dark ? "light" : "dark";
+      try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
+      sync();
+    });
+    sync();
+  })();
+</script>
+</body>
+</html>

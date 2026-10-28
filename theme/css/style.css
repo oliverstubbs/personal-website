@@ -1,0 +1,758 @@
+/* ==========================================================================
+   oliver.stubbs.me.uk
+   ========================================================================== */
+
+/* --- Fonts --------------------------------------------------------------
+   DejaVu Sans, self-hosted. It is what Linux resolves system-ui to, and what
+   this site has been designed against - without this, Windows gets Segoe UI
+   and Mac gets SF Pro, so nobody sees the same page. Latin subset, 29KB all in.
+   Only 400 and 700 exist: the 500 and 600 used below round to the nearer one. */
+
+@font-face {
+  font-family: "DejaVu Sans";
+  src: url("../fonts/dejavu-sans-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DejaVu Sans";
+  src: url("../fonts/dejavu-sans-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DejaVu Sans Mono";
+  src: url("../fonts/dejavu-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Tokens ------------------------------------------------------------- */
+
+:root {
+  --bg:        #FBF9F4;
+  --surface:   #F3F0E8;
+  --raised:    #FFFDF8;
+  --text:      #1A1816;
+  --muted:     #6E6860;
+  --icon:      #6E6860;
+  --diagram:   #6E6860;
+  --grain-o:   .25;
+  --grain-blend: multiply;
+  --grain-invert: 0;
+  --accent:    #B8381A;
+  --accent-sv: #96290C;
+  --border:    #E3DFD4;
+
+  --font-sans: "DejaVu Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --t-xs:  0.8125rem;
+  --t-s:   0.9375rem;
+  --t-m:   1.0625rem;
+  --t-l:   1.25rem;
+  --t-xl:  1.5rem;
+  --t-2xl: 2rem;
+  --t-3xl: 2.75rem;
+  --t-hero: clamp(2.75rem, 11vw, 5.5rem);
+
+  --s-1: .5rem;  --s-2: 1rem;  --s-3: 1.5rem;  --s-4: 2rem;
+  --s-6: 3rem;   --s-8: 4rem;  --s-12: 6rem;   --s-16: 8rem;
+
+  --wrap: 72rem;
+  --measure: 68ch;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --shadow: 0 1px 2px rgba(26,24,22,.04), 0 8px 24px -12px rgba(26,24,22,.10);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #14130F;
+    --surface:   #1D1C18;
+    --raised:    #222019;
+    --text:      #F0EDE4;
+    --muted:     #9C958A;
+    --icon:      #8A8378;
+    --diagram:   #E6DFD4;
+    --grain-o:   .22;
+    --grain-blend: screen;
+    --grain-invert: 1;
+    --accent:    #FF6B42;
+    --accent-sv: #FF8A67;
+    --border:    #2E2C26;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:        #14130F;
+  --surface:   #1D1C18;
+  --raised:    #222019;
+  --text:      #F0EDE4;
+  --muted:     #9C958A;
+  --icon:      #8A8378;
+  --diagram:   #E6DFD4;
+  --grain-o:   .22;
+  --grain-blend: screen;
+  --grain-invert: 1;
+  --accent:    #FF6B42;
+  --accent-sv: #FF8A67;
+  --border:    #2E2C26;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+}
+
+/* --- Base --------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+/* One root size, everywhere. Everything else is a rem multiple of it, so this
+   is the single scale knob for the site: type, spacing and the page width all
+   move together and the proportions never change. 89.5% of a 16px default is
+   14.32px, putting body text at 15.2px - set by eye. A percentage, not a pixel
+   value, so a reader who has set a larger default font size still gets 89.5%
+   of theirs rather than ours.
+
+   The root size used to scale UP past 100rem and 140rem of viewport width, on
+   the theory that a wide viewport means a big monitor. It doesn't: Linux
+   browsers usually report devicePixelRatio 1 whatever the panel density, so a
+   15" laptop claims the same CSS width as a 27" desktop and got the same
+   upscaling. That rule was why the site came out a different size on every
+   machine, and why each browser needed its own zoom level to look right.
+   Physical display size is not knowable from CSS - zoom and the reader's own
+   default font size are the knobs for it, and both work normally now. */
+html { font-size: 89.5%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--t-m);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Wide shell for layout, narrow measure for prose - two different jobs. */
+.wrap {
+  max-width: min(var(--wrap), 86vw);
+  margin-inline: auto;
+  padding-inline: clamp(var(--s-3), 4vw, var(--s-8));
+}
+.wrap--narrow { max-width: 46rem; }
+
+p, ul, ol, blockquote { max-width: var(--measure); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-sv); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+h1, h2, h3, h4 { margin: 0; font-weight: 600; line-height: 1.15; letter-spacing: -.015em; }
+
+/* --- Shared bits -------------------------------------------------------- */
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  margin: 0 0 var(--s-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.mono { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); }
+
+.tags { display: flex; flex-wrap: wrap; gap: .375rem; list-style: none; margin: 0; padding: 0; }
+.tags li {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .125rem .5rem;
+}
+
+/* --- Nav ---------------------------------------------------------------- */
+
+.nav {
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.nav__in {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-block: var(--s-2);
+}
+.nav__home {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.nav__links { display: flex; gap: var(--s-3); margin-left: auto; }
+.nav__links a {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--muted);
+  position: relative;
+  padding-block: 2px;
+}
+.nav__links a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 100%; bottom: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: right 180ms var(--ease);
+}
+.nav__links a:hover { color: var(--text); }
+.nav__links a:hover::after { right: 0; }
+.nav__links a[aria-current="page"] { color: var(--text); }
+.nav__links a[aria-current="page"]::after { right: 0; }
+
+.toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  flex: none;
+  transition: color 160ms var(--ease), border-color 160ms var(--ease);
+}
+.toggle:hover { color: var(--text); border-color: var(--muted); }
+.toggle svg { width: 15px; height: 15px; }
+.toggle .moon { display: none; }
+:root[data-theme="dark"] .toggle .sun,
+.toggle[data-dark] .sun { display: none; }
+:root[data-theme="dark"] .toggle .moon,
+.toggle[data-dark] .moon { display: block; }
+
+/* --- Hero --------------------------------------------------------------- */
+
+.hero { padding-block: var(--s-16) var(--s-12); }
+
+.hero__name {
+  font-size: var(--t-hero);
+  letter-spacing: -.035em;
+  line-height: .95;
+  margin-bottom: var(--s-4);
+}
+
+.hero__lede {
+  font-size: clamp(1.125rem, 2.4vw, 1.5rem);
+  line-height: 1.45;
+  max-width: 46ch;
+  margin: 0 0 var(--s-1);
+  color: var(--text);
+}
+.hero__lede strong { color: var(--accent); font-weight: 600; }
+
+/* Secondary to the lede: the mono and muted grey of the status pill and links,
+   a notch larger than the pill. Tight to the lede so the two read as a pair. */
+.hero__disciplines {
+  font-family: var(--font-mono);
+  font-size: var(--t-s);
+  line-height: 1.45;
+  max-width: 42ch;
+  margin: 0 0 var(--s-4);
+  color: var(--muted);
+}
+
+.hero__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: .3rem .75rem;
+  margin-bottom: var(--s-4);
+  /* If it has to wrap on a phone, split evenly rather than orphan a word. */
+  text-wrap: balance;
+}
+
+.pulse {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); flex: none;
+  animation: pulse 2.6s var(--ease) infinite;
+}
+@keyframes pulse {
+  0%, 72%, 100% { opacity: .3; transform: scale(1); }
+  12%           { opacity: 1;  transform: scale(1.4); }
+}
+
+.hero__links { display: flex; flex-wrap: wrap; gap: var(--s-3); font-family: var(--font-mono); font-size: var(--t-s); }
+.hero__links a { display: inline-flex; align-items: center; gap: .3rem; }
+.hero__links a::after {
+  content: "\2197";
+  font-size: .8em;
+  opacity: .5;
+  transition: transform 160ms var(--ease);
+}
+.hero__links a:hover::after { transform: translate(2px, -2px); }
+
+/* The hand-drawn record (same image as the favicon). White ground, so it
+   borrows the grain's blend: multiplied away on light, inverted on dark.
+   Beside the text when there's room; small and above the name when not. */
+.hero { display: grid; align-items: center; gap: var(--s-4); }
+.hero__intro { min-width: 0; }
+.hero__record {
+  order: -1;
+  width: 6.5rem;
+  mix-blend-mode: var(--grain-blend);
+  filter: invert(var(--grain-invert));
+  animation: spin 40s linear infinite;
+}
+@media (min-width: 60rem) {
+  .hero { grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-8); }
+  .hero__name { font-size: clamp(2.75rem, 6vw, 5rem); }
+  .hero__record { order: 0; width: clamp(14rem, 24vw, 20rem); }
+}
+@keyframes spin { to { rotate: 360deg; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero__record { animation: none; }
+}
+
+/* --- Sections ----------------------------------------------------------- */
+
+.section { padding-block: var(--s-8); }
+.section--tint {
+  background: var(--surface);
+  border-block: 1px solid var(--border);
+}
+
+/* --- Work cards --------------------------------------------------------- */
+
+.cards { display: grid; gap: var(--s-3); }
+@media (min-width: 46rem)  { .cards--two { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 68rem)  { .cards--two { gap: var(--s-4); } }
+@media (min-width: 60rem)  { .cards--all { grid-template-columns: repeat(3, 1fr); } }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  color: inherit;
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), border-color 180ms var(--ease);
+}
+a.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.card__media {
+  /* The covers are authored at 16:9. A max-height capped the box shorter than
+     that, so rasters cropped and SVGs letterboxed in the same row. */
+  aspect-ratio: 16 / 9;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.card__media img { width: 100%; height: 100%; object-fit: cover; }
+.card__svg { display: block; width: 100%; height: 100%; }
+.card__svg svg { display: block; width: 100%; height: 100%; }
+.card__media .placeholder {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--muted);
+  opacity: .6;
+}
+
+.card__body { padding: var(--s-3); display: flex; flex-direction: column; gap: var(--s-2); flex: 1; }
+.card__title { font-size: var(--t-l); }
+.card__context { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); margin: 0; }
+.card__blurb { font-size: var(--t-s); margin: 0; flex: 1; max-width: none; }
+
+.card__more {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--accent);
+}
+
+/* --- Notes list --------------------------------------------------------- */
+
+.notes { list-style: none; margin: 0; padding: 0; max-width: none; }
+.notes li { border-top: 1px solid var(--border); }
+.notes a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding-block: var(--s-2);
+  color: inherit;
+}
+.notes a:hover .notes__title { color: var(--accent); }
+.notes__title { font-weight: 600; transition: color 160ms var(--ease); }
+.notes__date { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); margin-left: auto; }
+
+/* --- Article ------------------------------------------------------------ */
+
+.article { padding-block: var(--s-8) var(--s-12); }
+/* One content column for article pages, centred. Everything inside spans it,
+   so every rule and every line of text shares the same edges. */
+.article {
+  max-width: 47rem;
+  margin-inline: auto;
+  /* Override the shell's wide side padding - on a narrow column it was
+     stealing 8rem and making the measure far tighter than intended. */
+  padding-inline: var(--s-3);
+}
+.article__head {
+  margin-bottom: var(--s-6);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--border);
+}
+/* Nothing inside an article gets its own narrower cap. */
+.article p,
+.article ul,
+.article ol,
+.article blockquote { max-width: none; }
+.article__title { font-size: clamp(1.9rem, 5vw, 2.75rem); margin-bottom: var(--s-2); }
+.article__body > * + * { margin-top: var(--s-3); }
+.article__body h2 {
+  font-size: var(--t-xl);
+  margin-top: var(--s-8);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--border);
+}
+.article__body h3 { font-size: var(--t-l); margin-top: var(--s-4); }
+.article__body ul, .article__body ol { padding-left: 1.25rem; }
+.article__body li + li { margin-top: .35rem; }
+.article__body blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: var(--s-2);
+  margin-inline: 0;
+  color: var(--muted);
+}
+.article__body pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: var(--s-2);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+}
+.article__body code { font-family: var(--font-mono); font-size: .9em; }
+.article__body :not(pre) > code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: .05em .3em;
+}
+.article__body img { border: 1px solid var(--border); border-radius: 6px; margin-block: var(--s-3); }
+.article__body figure { margin: var(--s-4) 0; max-width: 24rem; }
+/* Several plots side by side: full column width, not the single-figure 24rem. */
+.article__body figure.figrow {
+  max-width: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-2);
+}
+.article__body figure.figrow figcaption { grid-column: 1 / -1; }
+@media (max-width: 34rem) {
+  .article__body figure.figrow { grid-template-columns: 1fr; }
+}
+
+/* About: the site's full width, prose at its measure on the left and the
+   photo in a sticky column beside it. */
+.article.article--wide {
+  max-width: min(var(--wrap), 86vw);
+  padding-inline: clamp(var(--s-3), 4vw, var(--s-8));
+}
+.split { display: grid; gap: var(--s-6); }
+@media (min-width: 60rem) {
+  .split { grid-template-columns: minmax(0, 1fr) 20rem; gap: var(--s-8); align-items: start; }
+}
+
+/* Then and now: stacked in the side column, side by side once it's below
+   the text. Not sticky - the pair is taller than a laptop viewport. */
+.about__photos { display: grid; gap: var(--s-3); }
+@media (max-width: 59.99rem) {
+  .about__photos { grid-template-columns: 1fr 1fr; max-width: 36rem; }
+}
+/* The header already rules off the body; a leading h2 rule would double it. */
+.article__body > h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+.about__photo { margin: 0; max-width: 24rem; }
+.about__photo img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 6px; }
+.about__photo figcaption {
+  margin-top: var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--muted);
+}
+.article__body figure img { margin-block: 0; width: 100%; height: auto; }
+.article__body figcaption {
+  margin-top: var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--muted);
+}
+.table-scroll { overflow-x: auto; }
+.article__body table { width: 100%; border-collapse: collapse; font-size: var(--t-s); }
+.article__body th, .article__body td { text-align: left; padding: .5rem; border-bottom: 1px solid var(--border); }
+.article__body th { font-family: var(--font-mono); font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+
+.back { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); display: inline-block; margin-bottom: var(--s-3); }
+.back:hover { color: var(--accent); }
+
+/* --- Footer ------------------------------------------------------------- */
+
+.foot {
+  border-top: 1px solid var(--border);
+  padding-block: var(--s-4);
+  margin-top: var(--s-8);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--muted);
+}
+.foot__in { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); align-items: center; }
+.foot__in p { margin: 0; }
+.foot nav { display: flex; gap: var(--s-3); margin-left: auto; }
+/* A tinted band already ends the page; the gap would leave a stray strip. */
+.section--tint + .foot { margin-top: 0; }
+
+/* --- Motion ------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .pulse { opacity: .7; }
+}
+
+
+/* --- Currently listening ------------------------------------------------ */
+
+.albums {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+@media (min-width: 42rem) {
+  .albums { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Sits inside the article column, so it inherits the measure and side
+   padding; it needs only the same top gap as the Tech block above it. */
+#listening { margin-top: var(--s-8); }
+
+/* Subgrid: art / album / artist+year / track each get a shared row, so the
+   lines stay aligned across cards even when an album name wraps. */
+.albums { grid-template-rows: auto auto auto auto; }
+.album-card,
+.album-card__link {
+  grid-row: span 4;
+  display: grid;
+  grid-template-rows: subgrid;
+  gap: 0;
+}
+
+/* No subgrid: reserve two lines for the title so most cards still align. */
+@supports not (grid-template-rows: subgrid) {
+  .album-card, .album-card__link { display: block; }
+  .album-card__album { min-height: calc(2 * 1.35em); }
+}
+
+.album-card__art {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: var(--s-2);
+}
+.album-card__art img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Concentric rings, so a missing cover still reads as a record */
+.album-card__fallback {
+  display: block;
+  width: 100%; height: 100%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--accent) 0 11%, transparent 11.5%),
+    repeating-radial-gradient(circle at 50% 50%,
+      color-mix(in srgb, var(--muted) 22%, transparent) 0 1px,
+      transparent 1px 7px);
+}
+
+.album-card__album { margin: 0; font-weight: 600; font-size: var(--t-s); line-height: 1.35; max-width: none; }
+.album-card__meta  { margin: .15rem 0 0; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); max-width: none; }
+.album-card__track {
+  margin: .4rem 0 0;
+  align-self: end;
+  font-size: var(--t-xs);
+  color: var(--accent);
+  max-width: none;
+}
+.album-card__track::before { content: "\2197  "; opacity: .55; }
+
+/* Whole album card is the Spotify link */
+.album-card__link { display: block; color: inherit; }
+.album-card__link .album-card__art {
+  transition: transform 180ms var(--ease), border-color 180ms var(--ease);
+}
+.album-card__link:hover .album-card__art {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.album-card__link:hover .album-card__album { color: var(--accent); }
+.album-card__album { transition: color 160ms var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  .album-card__link:hover .album-card__art { transform: none; }
+}
+
+/* --- Tech ---------------------------------------------------------------- */
+/* Home page, between Selected work and the About blurb. Label column + pills on
+   wide screens, label above pills on narrow - the items are what gets scanned for. */
+
+.tech__list { margin: 0; display: grid; gap: var(--s-1) var(--s-4); }
+@media (min-width: 38rem) {
+  .tech__list { grid-template-columns: auto 1fr; row-gap: var(--s-2); align-items: baseline; }
+}
+.tech__label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--accent);
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.tech__items { margin: 0 0 var(--s-1); }
+
+/* The about.md line pointing at the albums. The section stays hidden when the
+   gist can't be reached, and then the line would point at nothing. */
+body:has(#listening[hidden]) .listening-ref { display: none; }
+
+/* --- Stack (about) ------------------------------------------------------- */
+/* The long form of the home page's Tech pills: each tool and what it's for. */
+
+.stack { margin-top: var(--s-8); }
+.stack__groups { display: grid; gap: 0 var(--s-8); }
+@media (min-width: 60rem) {
+  .stack__groups { grid-template-columns: 1fr 1fr; }
+}
+.stack__group {
+  font-size: var(--t-s);
+  font-weight: 600;
+  margin: var(--s-2) 0 var(--s-2);
+}
+/* Name above note: in a half-width column a side label would squeeze both. */
+.stack__list { margin: 0; display: grid; gap: .2rem; }
+.stack__list dt {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--accent);
+}
+.stack__list dd { margin: 0 0 var(--s-2); max-width: 52ch; }
+
+/* --- About blurb (home) -------------------------------------------------- */
+
+.interests p:not(.mono) {
+  font-size: clamp(1.0625rem, 1.8vw, 1.25rem);
+  line-height: 1.55;
+  max-width: 52ch;
+  margin: 0 0 var(--s-3);
+}
+
+/* --- Grain (experiment) -------------------------------------------------
+   Two variants, so they can be compared head to head:
+     <html data-grain>        texture across the whole page
+     <html data-grain-cards>  texture on the work card images only
+   Flip either live, no rebuild:
+     document.documentElement.toggleAttribute('data-grain')
+
+   'overlay' was the obvious choice and is the wrong one: on a near-white
+   ground it compresses to almost nothing. The tile is mostly white with
+   sparse darker specks, multiplied on light and inverted/screened on dark.
+   Static by design; animated crackle repaints every frame. */
+
+[data-grain] body::after,
+[data-grain-cards] .card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("../../images/grain.png");
+  background-size: 128px 128px;
+  mix-blend-mode: var(--grain-blend);
+  filter: invert(var(--grain-invert));
+  opacity: var(--grain-o);
+}
+[data-grain] body::after { position: fixed; z-index: 9000; }
+.card__media { position: relative; }
+/* Texture suits flat diagrams and placeholders; on a real photo it reads as dirt. */
+[data-grain-cards] .card__media:has(> img)::after { content: none; }
+
+/* --- 404 ---------------------------------------------------------------- */
+
+.notfound {
+  padding-block: var(--s-12);
+  min-height: 60svh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--s-6);
+  text-align: center;
+}
+.notfound__record {
+  width: clamp(8rem, 26vw, 13rem);
+  mix-blend-mode: var(--grain-blend);
+  filter: invert(var(--grain-invert));
+  animation: spin 8s linear infinite;
+}
+.notfound__title { font-size: clamp(1.75rem, 5vw, 2.75rem); margin: var(--s-1) 0 var(--s-2); }
+.notfound__lede { color: var(--muted); margin: 0 0 var(--s-4); }
+.notfound .hero__links { justify-content: center; }
+@media (prefers-reduced-motion: reduce) {
+  .notfound__record { animation: none; }
+}

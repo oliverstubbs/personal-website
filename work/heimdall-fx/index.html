@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-grain-cards>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heimdall &middot; Oliver Stubbs</title>
+  <meta name="description" content="What it is A web app where you upload a short clip of yourself playing guitar, and it tells you which effect is on it. The clip will go to a FastAPI...">
+
+  <meta property="og:site_name" content="Oliver Stubbs">
+  <meta property="og:title" content="Heimdall &middot; Oliver Stubbs">
+  <meta property="og:description" content="What it is A web app where you upload a short clip of yourself playing guitar, and it tells you which effect is on it. The clip will go to a FastAPI...">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oliver.stubbs.me.uk/work/heimdall-fx">
+
+  <meta property="og:image" content="https://oliver.stubbs.me.uk/images/record.png">
+  <meta property="og:image:alt" content="A hand-drawn record">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://oliver.stubbs.me.uk/images/record.png">
+  <link rel="canonical" href="https://oliver.stubbs.me.uk/work/heimdall-fx">
+
+  <script>
+    try {
+      var t = localStorage.getItem("theme");
+      if (t) document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+
+  <link rel="stylesheet" href="https://oliver.stubbs.me.uk/theme/css/style.css">
+  <link rel="icon" type="image/png" href="https://oliver.stubbs.me.uk/images/record.png">
+  <link rel="apple-touch-icon" href="https://oliver.stubbs.me.uk/images/record.png">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav__in">
+    <a class="nav__home" href="https://oliver.stubbs.me.uk/">Oliver Stubbs</a>
+    <nav class="nav__links">
+      <a href="https://oliver.stubbs.me.uk/work/" aria-current="page">Work</a>
+      <a href="https://oliver.stubbs.me.uk/about/" >About</a>
+    </nav>
+    <button class="toggle" type="button" id="theme-toggle" aria-label="Switch between light and dark">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+      </svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<article class="wrap article">
+  <a class="back" href="https://oliver.stubbs.me.uk/work/">&larr; Work</a>
+
+  <header class="article__head">
+    <h1 class="article__title">Heimdall</h1>
+<p class="card__context">Personal project</p>    <ul class="tags" style="margin-top: var(--s-2)"><li>Python</li><li>PyTorch</li><li>FastAPI</li><li>Docker</li></ul>
+  </header>
+
+  <div class="article__body"><h2>What it is</h2>
+<p>A web app where you upload a short clip of yourself playing guitar, and it tells you which effect is on it. The clip will go to a FastAPI backend, which runs it through a convolutional network trained from scratch and returns a prediction. The feature pipeline and the model are built; the training loop and the app itself are still to come.</p>
+<p>It classifies into one of twelve: feedback delay, slapback delay, reverb, chorus, flanger, phaser, tremolo, vibrato, distortion, overdrive, EQ, or no effect.</p>
+<h2>What I built</h2>
+<p><strong>The dataset.</strong> IDMT-SMT-AUDIO-EFFECTS, a public research set from Fraunhofer IDMT of guitar and bass recordings with effects applied. I use the guitar half and leave the bass, which comes to 34,452 clips across the twelve classes.</p>
+<p><strong>The splits.</strong> 24,090 training, 5,181 validation, 5,181 evaluation, split by <em>source recording</em> rather than by file.</p>
+<p>The filenames encode instrument, playing technique, pitch, string and fret, so the same physical note appears once under every effect. Splitting at random would put one note in training and that same note in evaluation under a different effect, and the model could score well by recognising the note instead of the effect. Grouping on the note keeps every effect variant of one recording on the same side, and a check asserts that no recording appears in two splits.</p>
+<p><strong>Features.</strong> Each clip becomes a mel spectrogram: 22.05 kHz, 1024-sample frames, 256 hop, 128 mel bands, converted to decibels with an 80 dB floor. Normalisation statistics are computed from the training clips only, so nothing about validation or evaluation leaks into the inputs.</p>
+<p><strong>The model.</strong> A baseline CNN built from four convolutional blocks, 16 up to 128 channels, each with batch normalisation and max pooling, then global average pooling into a single linear layer over the twelve classes.</p>
+<p>It comes to 98,940 parameters. Small on purpose: it is the baseline a fine-tuned pretrained model has to beat, and if it loses badly that comparison is the result worth reporting.</p>
+<p>Different effect spectrograms:</p>
+<figure class="figrow">
+  <img src="https://oliver.stubbs.me.uk/images/spec-phaser.jpg" alt="Mel spectrogram of a phased guitar note, its harmonic bands rippling over time" loading="lazy">
+  <img src="https://oliver.stubbs.me.uk/images/spec-distortion.jpg" alt="Mel spectrogram of a distorted guitar note, dense with added harmonics" loading="lazy">
+  <img src="https://oliver.stubbs.me.uk/images/spec-reverb.jpg" alt="Mel spectrogram of a reverberant guitar note, its energy smearing out in time" loading="lazy">
+  <figcaption>Phaser, distortion and reverb. The same kind of plot the model is trained on.</figcaption>
+</figure>
+
+<h2>What I learned</h2>
+<p><code>torchaudio</code> reads the last dimension of a tensor as time. My stereo files are samples by channels, so a two-second clip arrived as two samples with 88,200 channels. It padded them out and handed back a spectrogram of nothing. Nothing raised an error. The normalisation statistics caught me the same way: measure them after normalising and they describe data that is already normalised.</p>
+<p>The checks that have caught anything so far have all checked a shape or a count, never a result.</p>
+<h2>What it does not do yet</h2>
+<ul>
+<li>The training loop. Everything feeding it exists; the loop itself is the piece still to write</li>
+<li>The web app. Planned, not started</li>
+<li>Need to test using real pedals, rather than just simulated ones</li>
+<li>Every clip is two seconds of one note or one chord, so nothing in training looks like playing</li>
+</ul></div>
+</article>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>&copy; 2026 Oliver Stubbs</p>
+    <nav>
+      <a href="mailto:oliversestubbs+site@gmail.com">Email</a>
+      <a href="https://github.com/oliverstubbs" rel="me noopener" target="_blank">GitHub</a>
+      <a href="https://www.linkedin.com/in/oliversestubbs" rel="me noopener" target="_blank">LinkedIn</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    var root = document.documentElement;
+    function sync() {
+      var dark = root.dataset.theme
+        ? root.dataset.theme === "dark"
+        : matchMedia("(prefers-color-scheme: dark)").matches;
+      btn.toggleAttribute("data-dark", dark);
+    }
+    btn.addEventListener("click", function () {
+      var dark = root.dataset.theme
+        ? root.dataset.theme === "dark"
+        : matchMedia("(prefers-color-scheme: dark)").matches;
+      root.dataset.theme = dark ? "light" : "dark";
+      try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
+      sync();
+    });
+    sync();
+  })();
+</script>
+</body>
+</html>
